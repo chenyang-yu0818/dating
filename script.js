@@ -74,8 +74,7 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 document.getElementById("acceptBtn").addEventListener("click", () => {
   inviteText.textContent = "太好了，约会计划已启动";
   startBgm();
-  show("screen-weather");
-  loadWeather();
+  show("screen-time");
 });
 
 let escapes = 0;
@@ -156,24 +155,33 @@ function makeFx(type) {
 }
 
 async function loadWeather() {
+  const selectedDate = state.date || dateInput.value;
+  document.getElementById("weatherTitle").textContent = `${formatDate(selectedDate)} 天气预报`;
   makeFx("rain");
   try {
     const pos = await new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5500 });
     });
     const { latitude, longitude } = pos.coords;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&hourly=apparent_temperature,relative_humidity_2m,wind_speed_10m&start_date=${selectedDate}&end_date=${selectedDate}&timezone=auto`;
     const response = await fetch(url);
     if (!response.ok) throw new Error("weather request failed");
     const data = await response.json();
-    const [label, icon, type] = weatherMeta(data.current.weather_code);
+    const [label, icon, type] = weatherMeta(data.daily.weather_code[0]);
+    const maxTemp = Math.round(data.daily.temperature_2m_max[0]);
+    const minTemp = Math.round(data.daily.temperature_2m_min[0]);
+    const feels = Math.round(average(data.hourly.apparent_temperature));
+    const humidity = Math.round(average(data.hourly.relative_humidity_2m));
+    const wind = Math.round(Math.max(...data.hourly.wind_speed_10m));
+    const rainChance = Math.round(data.daily.precipitation_probability_max[0] ?? 0);
     document.getElementById("weatherIcon").textContent = icon;
     document.getElementById("weatherEmoji").textContent = icon;
     document.getElementById("weatherLabel").textContent = label;
-    document.getElementById("weatherTemp").textContent = `${Math.round(data.current.temperature_2m)}°C`;
-    document.getElementById("weatherFeels").textContent = `${Math.round(data.current.apparent_temperature)}°C`;
-    document.getElementById("weatherHumidity").textContent = `${Math.round(data.current.relative_humidity_2m)}%`;
-    document.getElementById("weatherWind").textContent = `${Math.round(data.current.wind_speed_10m)}km/h`;
+    document.getElementById("weatherTemp").textContent = `${minTemp}-${maxTemp}°C`;
+    document.getElementById("weatherFeels").textContent = `${feels}°C`;
+    document.getElementById("weatherHumidity").textContent = `${humidity}%`;
+    document.getElementById("weatherWind").textContent = `${wind}km/h`;
+    document.getElementById("weatherAir").textContent = `${rainChance}%`;
     makeFx(type);
   } catch (error) {
     document.getElementById("weatherIcon").textContent = "🌧️";
@@ -183,8 +191,15 @@ async function loadWeather() {
     document.getElementById("weatherFeels").textContent = "20°C";
     document.getElementById("weatherHumidity").textContent = "78%";
     document.getElementById("weatherWind").textContent = "12km/h";
+    document.getElementById("weatherAir").textContent = "65%";
     makeFx("rain");
   }
+}
+
+function average(values) {
+  const usable = values.filter((value) => Number.isFinite(value));
+  if (!usable.length) return 0;
+  return usable.reduce((sum, value) => sum + value, 0) / usable.length;
 }
 
 function formatDate(value) {
@@ -205,7 +220,8 @@ document.getElementById("timeForm").addEventListener("submit", (event) => {
   state.date = dateInput.value;
   state.time = timeInput.value;
   updateFinal();
-  show("screen-food");
+  show("screen-weather");
+  loadWeather();
 });
 
 function setupChoice({ gridId, attr, stateKey, inputId, addId, nextId, nextScreen }) {
