@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我们的约会邀请</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true">
+    <span>✿</span><span>♥</span><span>✦</span><span>✿</span><span>♥</span>
+  </div>
+
+  <main class="app-shell">
+    <section class="card screen active" id="screen-intro">
+      <div class="pixel-icon pet">🐶</div>
+      <h1>🌸 可以和我一起<br />约会嘛？！ 🌸</h1>
+      <p>某位胆小鬼鼓起勇气，发出了这份邀请。</p>
+      <div class="actions">
+        <button class="btn primary" data-next="screen-surprise">愿意 💗</button>
+        <button class="btn ghost" id="declineBtn">不要 🙈</button>
+      </div>
+    </section>
+
+    <section class="card screen" id="screen-surprise">
+      <div class="pixel-icon">🎁</div>
+      <h1>等下，你真的点了愿意？ 😭</h1>
+      <p>我已经准备好最特别的一天啦。</p>
+      <button class="btn primary" data-next="screen-time">好期待 →</button>
+    </section>
+
+    <section class="card screen" id="screen-time">
+      <div class="pixel-icon">📅</div>
+      <h1>所以…你什么时候有空？ 😌</h1>
+      <form id="timeForm">
+        <label for="dateInput">选一天</label>
+        <input id="dateInput" type="date" required />
+        <label for="timeInput">几点见？</label>
+        <input id="timeInput" type="time" value="17:00" required />
+        <button class="btn primary" type="submit">就定这个时间</button>
+      </form>
+    </section>
+
+    <section class="card screen wide" id="screen-food">
+      <div class="pixel-icon">🍽️</div>
+      <h1>我们吃点什么？ ✨</h1>
+      <p>挑一个今天最想吃的吧。</p>
+      <div class="choice-grid" id="foodGrid">
+        <button data-food="中餐">🥟<span>中餐</span></button>
+        <button data-food="日料">🍣<span>日料</span></button>
+        <button data-food="韩餐">🍲<span>韩餐</span></button>
+        <button data-food="泰国菜">🍛<span>泰国菜</span></button>
+        <button data-food="越南菜">🍜<span>越南菜</span></button>
+        <button data-food="印度菜">🍛<span>印度菜</span></button>
+        <button data-food="意大利菜">🍝<span>意大利菜</span></button>
+        <button data-food="法国菜">🥐<span>法国菜</span></button>
+        <button data-food="希腊菜">🫒<span>希腊菜</span></button>
+        <button data-food="墨西哥菜">🌮<span>墨西哥菜</span></button>
+        <button data-food="西班牙海鲜饭">🥘<span>西班牙海鲜饭</span></button>
+        <button data-food="土耳其菜">🥙<span>土耳其菜</span></button>
+        <button data-food="披萨">🍕<span>披萨</span></button>
+        <button data-food="火锅">🫕<span>火锅</span></button>
+        <button data-food="烧烤">🍢<span>烧烤</span></button>
+        <button data-food="汉堡">🍔<span>汉堡</span></button>
+        <button data-food="炸鸡">🍗<span>炸鸡</span></button>
+        <button data-food="海鲜">🦞<span>海鲜</span></button>
+        <button data-food="素食">🥗<span>素食</span></button>
+        <button data-food="甜品">🍰<span>甜品</span></button>
+      </div>
+      <div class="custom-choice">
+        <label for="customFood">上面没有？写下你最想吃的：</label>
+        <div class="custom-row">
+          <input id="customFood" type="text" maxlength="40" placeholder="例如：新疆菜、早午餐、某家餐厅……" />
+          <button class="btn mini" id="useCustomFood" type="button">选这个</button>
+        </div>
+      </div>
+      <button class="btn primary" id="foodNext" disabled>下一步：选活动 →</button>
+    </section>
+
+    <section class="card screen wide" id="screen-activity">
+      <div class="pixel-icon">🎡</div>
+      <h1>吃完以后去做什么？ 💫</h1>
+      <p>选一个想和我一起做的活动。</p>
+      <div class="choice-grid" id="activityGrid">
+        <button data-activity="看电影">🎬<span>看电影</span></button>
+        <button data-activity="去咖啡厅">☕<span>咖啡厅</span></button>
+        <button data-activity="公园放松">🌳<span>公园放松</span></button>
+        <button data-activity="逛街购物">🛍️<span>购物</span></button>
+        <button data-activity="一起打球">🏸<span>打球</span></button>
+        <button data-activity="逛超市">🛒<span>逛超市</span></button>
+        <button data-activity="去看展">🖼️<span>看展</span></button>
+        <button data-activity="唱歌">🎤<span>唱歌</span></button>
+        <button data-activity="散步聊天">🚶<span>散步聊天</span></button>
+        <button data-activity="打游戏">🎮<span>打游戏</span></button>
+        <button data-activity="拍照">📷<span>拍照</span></button>
+        <button data-activity="看夜景">🌃<span>看夜景</span></button>
+        <button data-activity="逛书店">📚<span>逛书店</span></button>
+        <button data-activity="去游乐园">🎢<span>游乐园</span></button>
+        <button data-activity="做手工">🧶<span>做手工</span></button>
+        <button data-activity="一起做饭">👩‍🍳<span>一起做饭</span></button>
+      </div>
+      <div class="custom-choice">
+        <label for="customActivity">上面没有？写下你最想做的：</label>
+        <div class="custom-row">
+          <input id="customActivity" type="text" maxlength="40" placeholder="例如：去海边、溜冰、参观博物馆……" />
+          <button class="btn mini" id="useCustomActivity" type="button">选这个</button>
+        </div>
+      </div>
+      <button class="btn primary" id="activityNext" disabled>完成约会计划 →</button>
+    </section>
+
+    <section class="card screen" id="screen-final">
+      <div class="pixel-icon pet">🐶</div>
+      <h1>真开心你没有拒绝～<br />我会准时来接你！</h1>
+      <p id="summaryText"></p>
+      <div class="ticket">
+        <div><span>日期</span><strong id="finalDate">—</strong></div>
+        <div><span>时间</span><strong id="finalTime">—</strong></div>
+        <div><span>吃什么</span><strong id="finalFood">—</strong></div>
+        <div><span>做什么</span><strong id="finalActivity">—</strong></div>
+      </div>
+      <button class="btn ghost" id="restartBtn">再看一次 ↺</button>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">这个按钮好像会逃跑 😝</div>
+  <script src="script.js"></script>
+</body>
+</html>
