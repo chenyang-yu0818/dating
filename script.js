@@ -11,6 +11,11 @@ const declineBtn = document.getElementById("declineBtn");
 const inviteText = document.getElementById("inviteText");
 const dateInput = document.getElementById("dateInput");
 const timeInput = document.getElementById("timeInput");
+const musicToggle = document.getElementById("musicToggle");
+let audioContext;
+let musicBus;
+let musicTimer;
+let musicPlaying = false;
 
 function show(id) {
   screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
@@ -23,24 +28,101 @@ function showToast(message) {
   window.setTimeout(() => toast.classList.remove("show"), 1400);
 }
 
+function playTone(freq, start, duration, gain = 0.05) {
+  const oscillator = audioContext.createOscillator();
+  const toneGain = audioContext.createGain();
+  oscillator.type = "triangle";
+  oscillator.frequency.setValueAtTime(freq, start);
+  toneGain.gain.setValueAtTime(0, start);
+  toneGain.gain.linearRampToValueAtTime(gain, start + 0.08);
+  toneGain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  oscillator.connect(toneGain).connect(musicBus);
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.1);
+}
+
+function scheduleBgmPhrase(start) {
+  const chords = [
+    [261.63, 329.63, 392.0],
+    [220.0, 329.63, 392.0],
+    [246.94, 293.66, 392.0],
+    [196.0, 293.66, 349.23],
+  ];
+  chords.forEach((chord, index) => {
+    const t = start + index * 1.8;
+    chord.forEach((freq, noteIndex) => playTone(freq, t + noteIndex * 0.035, 1.55, 0.035));
+    playTone(chord[2] * 2, t + 0.72, 0.62, 0.018);
+  });
+}
+
+async function startBgm() {
+  if (musicPlaying) return;
+  audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+  if (!musicBus) {
+    musicBus = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 1300;
+    musicBus.gain.value = 0;
+    musicBus.connect(filter).connect(audioContext.destination);
+  }
+  await audioContext.resume();
+  musicPlaying = true;
+  musicToggle.classList.add("playing");
+  musicToggle.textContent = "♫";
+  musicBus.gain.cancelScheduledValues(audioContext.currentTime);
+  musicBus.gain.linearRampToValueAtTime(0.52, audioContext.currentTime + 0.6);
+  scheduleBgmPhrase(audioContext.currentTime + 0.05);
+  musicTimer = window.setInterval(() => scheduleBgmPhrase(audioContext.currentTime + 0.05), 7200);
+}
+
+function stopBgm() {
+  if (!musicPlaying) return;
+  musicPlaying = false;
+  window.clearInterval(musicTimer);
+  musicToggle.classList.remove("playing");
+  musicToggle.textContent = "♪";
+  if (musicBus && audioContext) {
+    musicBus.gain.cancelScheduledValues(audioContext.currentTime);
+    musicBus.gain.linearRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+  }
+}
+
+musicToggle.addEventListener("click", () => {
+  if (musicPlaying) {
+    stopBgm();
+  } else {
+    startBgm();
+  }
+});
+
 document.querySelectorAll("[data-next]").forEach((button) => {
   button.addEventListener("click", () => show(button.dataset.next));
 });
 
 document.getElementById("acceptBtn").addEventListener("click", () => {
   inviteText.textContent = "太好了，约会计划已启动";
+  startBgm();
   show("screen-weather");
   loadWeather();
 });
 
 let escapes = 0;
-declineBtn.addEventListener("mouseenter", () => {
-  if (window.innerWidth < 700 || escapes > 4) return;
+function runAwayDecline() {
+  if (escapes > 9) return;
   escapes += 1;
-  declineBtn.style.transform = `translate(${Math.random() * 130 - 65}px, ${Math.random() * 70 - 35}px)`;
-});
+  const rangeX = Math.min(window.innerWidth * 0.34, 430);
+  const rangeY = Math.min(window.innerHeight * 0.24, 250);
+  const x = (Math.random() > 0.5 ? 1 : -1) * (rangeX * (0.42 + Math.random() * 0.58));
+  const y = (Math.random() > 0.5 ? 1 : -1) * (rangeY * (0.34 + Math.random() * 0.66));
+  declineBtn.style.transform = `translate(${x}px, ${y}px) rotate(${Math.random() * 14 - 7}deg)`;
+}
+
+declineBtn.addEventListener("mouseenter", runAwayDecline);
+declineBtn.addEventListener("focus", runAwayDecline);
 
 declineBtn.addEventListener("click", () => {
+  runAwayDecline();
   showToast("这个按钮会逃跑 😝");
 });
 
