@@ -863,7 +863,7 @@ form .btn {
 .ticket {
   position: absolute;
   left: 50%;
-  bottom: clamp(20px, 4vh, 46px);
+  bottom: clamp(92px, 14vh, 126px);
   width: min(720px, calc(100% - 32px));
   z-index: 2;
   display: grid;
@@ -876,6 +876,33 @@ form .btn {
   backdrop-filter: blur(10px);
   box-shadow: 0 18px 48px rgba(199, 73, 139, 0.2);
   transform: translateX(-50%);
+}
+
+.final-actions {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(30px, 6vh, 52px);
+  z-index: 3;
+  width: min(360px, calc(100% - 48px));
+  transform: translateX(-50%);
+}
+
+.send-plan-btn {
+  width: 100%;
+  min-height: 56px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff62bc, #ff1494);
+  color: #fff;
+  box-shadow: 0 6px 0 var(--ink), 0 18px 36px rgba(255, 53, 161, 0.2);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.send-plan-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 var(--ink), 0 12px 24px rgba(255, 53, 161, 0.16);
 }
 
 .ticket div {

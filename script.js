@@ -285,6 +285,40 @@ function updateFinal() {
   document.getElementById("finalActivity").textContent = state.activities.length ? state.activities.join(", ") : "还没选";
 }
 
+function buildPlanText() {
+  const weather = [
+    document.getElementById("weatherLabel").textContent,
+    document.getElementById("weatherTemp").textContent,
+  ].filter(Boolean).join(" ");
+  return [
+    "阿阳，我选好啦！",
+    `日期：${document.getElementById("finalDate").textContent}`,
+    `时间：${document.getElementById("finalTime").textContent}`,
+    `天气：${weather || "待定"}`,
+    `想吃：${document.getElementById("finalFood").textContent}`,
+    `想做：${document.getElementById("finalActivity").textContent}`,
+  ].join("\n");
+}
+
+async function sendPlan() {
+  const text = buildPlanText();
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "刘乐乐的约会计划", text });
+      showToast("计划发出去啦 💌");
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("约会计划已复制，发给阿阳就好啦");
+  } catch (error) {
+    showToast("复制失败，可以截图发给阿阳");
+  }
+}
+
 document.getElementById("timeForm").addEventListener("submit", (event) => {
   event.preventDefault();
   state.date = dateInput.value;
@@ -372,6 +406,8 @@ document.getElementById("restartBtn").addEventListener("click", () => {
   updateFinal();
   show("screen-intro");
 });
+
+document.getElementById("sendPlanBtn").addEventListener("click", sendPlan);
 
 updateFinal();
 makeFx("rain");
