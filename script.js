@@ -14,6 +14,10 @@ const timeInput = document.getElementById("timeInput");
 const musicToggle = document.getElementById("musicToggle");
 const bgmAudio = document.getElementById("bgmAudio");
 let musicPlaying = false;
+let synthContext;
+let synthBus;
+let synthTimer;
+let usingSynthBgm = false;
 
 function show(id) {
   screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
@@ -28,24 +32,87 @@ function showToast(message) {
 
 async function startBgm({ silent = false } = {}) {
   if (musicPlaying) return;
-  if (!bgmAudio) return;
-  try {
-    bgmAudio.volume = 0.42;
-    await bgmAudio.play();
-    musicPlaying = true;
-    musicToggle.classList.add("playing");
-    musicToggle.textContent = "♫";
-  } catch (error) {
-    if (!silent) showToast("浏览器拦截了自动播放，点一下页面就会播放");
+  if (bgmAudio) {
+    try {
+      bgmAudio.volume = 0.42;
+      await bgmAudio.play();
+      setMusicPlaying(false);
+      return;
+    } catch (error) {
+      if (error.name === "NotAllowedError") {
+        if (!silent) showToast("浏览器拦截了自动播放，点一下页面就会播放");
+        return;
+      }
+    }
   }
+  try {
+    await startSynthBgm();
+    setMusicPlaying(true);
+  } catch (error) {
+    if (!silent) showToast("点一下页面就会播放 BGM");
+  }
+}
+
+function setMusicPlaying(isSynth) {
+  usingSynthBgm = isSynth;
+  musicPlaying = true;
+  musicToggle.classList.add("playing");
+  musicToggle.textContent = "♫";
 }
 
 function stopBgm() {
   if (!musicPlaying) return;
   musicPlaying = false;
-  bgmAudio.pause();
+  if (bgmAudio) bgmAudio.pause();
+  stopSynthBgm();
   musicToggle.classList.remove("playing");
   musicToggle.textContent = "♪";
+}
+
+async function startSynthBgm() {
+  synthContext ||= new (window.AudioContext || window.webkitAudioContext)();
+  await synthContext.resume();
+  if (!synthBus) {
+    synthBus = synthContext.createGain();
+    const filter = synthContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 1450;
+    synthBus.gain.value = 0.22;
+    synthBus.connect(filter).connect(synthContext.destination);
+  }
+  scheduleSynthPhrase(synthContext.currentTime + 0.05);
+  synthTimer = window.setInterval(() => scheduleSynthPhrase(synthContext.currentTime + 0.05), 7600);
+}
+
+function stopSynthBgm() {
+  window.clearInterval(synthTimer);
+}
+
+function playSynthTone(freq, start, duration, gain = 0.035) {
+  const oscillator = synthContext.createOscillator();
+  const toneGain = synthContext.createGain();
+  oscillator.type = "triangle";
+  oscillator.frequency.setValueAtTime(freq, start);
+  toneGain.gain.setValueAtTime(0.0001, start);
+  toneGain.gain.linearRampToValueAtTime(gain, start + 0.08);
+  toneGain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  oscillator.connect(toneGain).connect(synthBus);
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.12);
+}
+
+function scheduleSynthPhrase(start) {
+  const chords = [
+    [261.63, 329.63, 392.0],
+    [220.0, 329.63, 392.0],
+    [246.94, 293.66, 369.99],
+    [196.0, 293.66, 349.23],
+  ];
+  chords.forEach((chord, index) => {
+    const t = start + index * 1.9;
+    chord.forEach((freq, noteIndex) => playSynthTone(freq, t + noteIndex * 0.04, 1.55));
+    playSynthTone(chord[2] * 2, t + 0.82, 0.52, 0.018);
+  });
 }
 
 musicToggle.addEventListener("click", () => {
@@ -57,7 +124,10 @@ musicToggle.addEventListener("click", () => {
 });
 
 function armAutoplayFallback() {
-  const resume = () => startBgm({ silent: true });
+  const resume = (event) => {
+    if (event.target.closest("#musicToggle")) return;
+    startBgm({ silent: true });
+  };
   document.addEventListener("pointerdown", resume, { once: true });
   document.addEventListener("keydown", resume, { once: true });
 }
