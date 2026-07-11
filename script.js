@@ -12,9 +12,7 @@ const inviteText = document.getElementById("inviteText");
 const dateInput = document.getElementById("dateInput");
 const timeInput = document.getElementById("timeInput");
 const musicToggle = document.getElementById("musicToggle");
-let audioContext;
-let musicBus;
-let musicTimer;
+const bgmAudio = document.getElementById("bgmAudio");
 let musicPlaying = false;
 
 function show(id) {
@@ -28,64 +26,26 @@ function showToast(message) {
   window.setTimeout(() => toast.classList.remove("show"), 1400);
 }
 
-function playTone(freq, start, duration, gain = 0.05) {
-  const oscillator = audioContext.createOscillator();
-  const toneGain = audioContext.createGain();
-  oscillator.type = "triangle";
-  oscillator.frequency.setValueAtTime(freq, start);
-  toneGain.gain.setValueAtTime(0, start);
-  toneGain.gain.linearRampToValueAtTime(gain, start + 0.08);
-  toneGain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  oscillator.connect(toneGain).connect(musicBus);
-  oscillator.start(start);
-  oscillator.stop(start + duration + 0.1);
-}
-
-function scheduleBgmPhrase(start) {
-  const chords = [
-    [261.63, 329.63, 392.0],
-    [220.0, 329.63, 392.0],
-    [246.94, 293.66, 392.0],
-    [196.0, 293.66, 349.23],
-  ];
-  chords.forEach((chord, index) => {
-    const t = start + index * 1.8;
-    chord.forEach((freq, noteIndex) => playTone(freq, t + noteIndex * 0.035, 1.55, 0.035));
-    playTone(chord[2] * 2, t + 0.72, 0.62, 0.018);
-  });
-}
-
-async function startBgm() {
+async function startBgm({ silent = false } = {}) {
   if (musicPlaying) return;
-  audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
-  if (!musicBus) {
-    musicBus = audioContext.createGain();
-    const filter = audioContext.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 1300;
-    musicBus.gain.value = 0;
-    musicBus.connect(filter).connect(audioContext.destination);
+  if (!bgmAudio) return;
+  try {
+    bgmAudio.volume = 0.42;
+    await bgmAudio.play();
+    musicPlaying = true;
+    musicToggle.classList.add("playing");
+    musicToggle.textContent = "♫";
+  } catch (error) {
+    if (!silent) showToast("浏览器拦截了自动播放，点一下页面就会播放");
   }
-  await audioContext.resume();
-  musicPlaying = true;
-  musicToggle.classList.add("playing");
-  musicToggle.textContent = "♫";
-  musicBus.gain.cancelScheduledValues(audioContext.currentTime);
-  musicBus.gain.linearRampToValueAtTime(0.52, audioContext.currentTime + 0.6);
-  scheduleBgmPhrase(audioContext.currentTime + 0.05);
-  musicTimer = window.setInterval(() => scheduleBgmPhrase(audioContext.currentTime + 0.05), 7200);
 }
 
 function stopBgm() {
   if (!musicPlaying) return;
   musicPlaying = false;
-  window.clearInterval(musicTimer);
+  bgmAudio.pause();
   musicToggle.classList.remove("playing");
   musicToggle.textContent = "♪";
-  if (musicBus && audioContext) {
-    musicBus.gain.cancelScheduledValues(audioContext.currentTime);
-    musicBus.gain.linearRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
-  }
 }
 
 musicToggle.addEventListener("click", () => {
@@ -94,6 +54,17 @@ musicToggle.addEventListener("click", () => {
   } else {
     startBgm();
   }
+});
+
+function armAutoplayFallback() {
+  const resume = () => startBgm({ silent: true });
+  document.addEventListener("pointerdown", resume, { once: true });
+  document.addEventListener("keydown", resume, { once: true });
+}
+
+window.addEventListener("load", () => {
+  startBgm({ silent: true });
+  armAutoplayFallback();
 });
 
 document.querySelectorAll("[data-next]").forEach((button) => {
